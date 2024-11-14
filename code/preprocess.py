@@ -4,8 +4,6 @@ I then save the filtered records to a CSV file. """
 import zstandard as zstd
 import json
 import pandas as pd
-import tkinter as tk
-from tkinter import filedialog
 from tqdm import tqdm
 import os
 
@@ -60,25 +58,32 @@ def process_zst_file_to_csv(input_path, output_path, filter_func, chunk_size=102
     df.to_csv(output_path, index=False)
     print("Processing complete.")
 
-def select_file():
+def preprocess(input_path):
     """
-    Opens a file dialog to select a file.
+    Main function to execute the preprocessing of the zst file.
+
+    Args:
+        input_path (str): Path to the input .zst file.
 
     Returns:
-        str: Path to the selected file.
+        str: Path to the output CSV file.
     """
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename()
-    return file_path
+    # Define the output path
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+    output_path = os.path.join(output_dir, 'processed_posts.csv')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-# Define the input and output path
-input_path = select_file()
-output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
-output_path = os.path.join(output_dir, 'processed_posts.csv')
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
+    # Preprocess the zst file
+    process_zst_file_to_csv(input_path, output_path, lambda x: True)
+    
+    return output_path
 
-# Preprocess the zst file
-input_path = select_file()
-process_zst_file_to_csv(input_path, output_path, lambda x: True)
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) != 2:
+        print("Usage: python preprocess.py <input_zst_path>")
+        sys.exit(1)
+    input_zst_path = sys.argv[1]
+    output_csv_path = preprocess(input_zst_path)
+    print(f"Processed data saved to {output_csv_path}.")
