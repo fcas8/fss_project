@@ -13,9 +13,11 @@ import zipfile
 from datetime import datetime as dt
 import os
 
-import carmen
 import pandas as pd
 from tqdm import tqdm
+
+# Set the current working directory to the script's directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def load_bz2_json(filename):
     """
@@ -75,25 +77,23 @@ def clean(tweets, percentage, seed):
         except KeyError:
             continue  # Do nothing if required keys are missing
 
-def process_twitterstream_other_days(year, percentage=1, seed=0, csv=False):
+def process_twitterstream(year, percentage=1, seed=0):
     """
     This function processes a Twitter stream data for a given year. It reads the data from .tar or .zip files, 
     extracts the tweets, selects a random sample of the tweets based on the provided percentage, 
-    resolves the location of each tweet using the Carmen library, and saves the processed data in a .json file. 
-    If csv is set to True, it also saves the data in a .csv file.
+    resolves the location of each tweet using the Carmen library, and saves the processed data in a .csv file.
 
     Parameters:
     year (int): The year of the Twitter stream data to process.
     percentage (float, optional): The percentage of tweets to sample from each file. Default is 1, which means all tweets are used.
     seed (int, optional): The seed for the random number generator used for sampling tweets. Default is 0.
-    csv (bool, optional): Whether to save the processed data in a .csv file. Default is False.
 
     Returns:
     None
 
     """
 
-    filenames = glob.glob(os.path.join('main', 'preprocess', 'data', str(year), '*'))
+    filenames = glob.glob(os.path.join('..', 'preprocess', 'data', str(year), '*'))
 
     for filename in filenames:
         print('Starting processing...')
@@ -103,35 +103,25 @@ def process_twitterstream_other_days(year, percentage=1, seed=0, csv=False):
         output_filename = re.sub('.tar', '', output_filename)
         output_filename = re.sub('.zip', '', output_filename)
 
-        output_dir = os.path.join('main', 'preprocess', 'data_located', str(year))
+        output_dir = os.path.join('..', 'preprocess', 'data_preprocessed', str(year))
         os.makedirs(output_dir, exist_ok=True)
 
-        with open(os.path.join(output_dir, f'{output_filename}.json'), 'a+', encoding='utf-8') as output:
-            if filename.endswith('.tar'):
-                with tarfile.open(filename) as tar:
-                    for member in tqdm(tar.getmembers()):
-                        file = tar.extractfile(member)
-                        tweets = clean(load_bz2_json(file), percentage, seed)
-                        for tweet in tweets:
-                            json.dump(tweet, output)
-                            output.write('\n')
-            elif filename.endswith('.zip'):
-                with zipfile.ZipFile(filename) as zipf:
-                    for member in tqdm(zipf.namelist()):
-                        if member.endswith('.bz2'):
-                            with zipf.open(member) as file:
-                                tweets = clean(load_bz2_json(file), percentage, seed)
-                                for tweet in tweets:
-                                    json.dump(tweet, output)
-                                    output.write('\n')
-
         all_tweets = []
-        with open(os.path.join(output_dir, f'{output_filename}.json'), 'r', encoding='utf-8') as f:
-            for line in f:
-                content = json.loads(line)
-                all_tweets.append(content)
+
+        if filename.endswith('.tar'):
+            with tarfile.open(filename) as tar:
+                for member in tqdm(tar.getmembers()):
+                    file = tar.extractfile(member)
+                    tweets = clean(load_bz2_json(file), percentage, seed)
+                    all_tweets.extend(tweets)
+        elif filename.endswith('.zip'):
+            with zipfile.ZipFile(filename) as zipf:
+                for member in tqdm(zipf.namelist()):
+                    if member.endswith('.bz2'):
+                        with zipf.open(member) as file:
+                            tweets = clean(load_bz2_json(file), percentage, seed)
+                            all_tweets.extend(tweets)
 
         df = pd.DataFrame(all_tweets, columns=['id', 'text', 'created_at'])
 
-        if csv:
-            df.to_csv(os.path.join(output_dir, f'{output_filename}.csv'))
+        df.to_csv(os.path.join(output_dir, f'{output_filename}.csv'), index=False)
