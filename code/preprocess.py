@@ -4,6 +4,7 @@ keep relevant information and output results in a dataframe.
 """
 
 import bz2
+import gzip
 import glob 
 import json
 import random
@@ -19,28 +20,43 @@ from tqdm import tqdm
 # Set the current working directory to the script's directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-def load_bz2_json(filename):
+def load_compressed_json(file, compression_type):
     """
-    This function loads a .bz2 compressed JSON file and yields each tweet in the file as a Python dictionary.
+    This function loads a compressed JSON file and yields each tweet in the file as a Python dictionary.
     If an error occurs while loading a tweet, it prints the error message and continues with the next tweet.
 
     Parameters:
-    filename (str): The path to the .bz2 file.
+    file (file-like object): The file-like object of the compressed file.
+    compression_type (str): The type of compression ('bz2' or 'gz').
 
     Yields:
     dict: The next tweet in the file.
     """
     try:
-        # Ensure the file object is correctly handled for bz2 decompression
-        with bz2.BZ2File(filename) as handle:
-            for line in handle:
-                try:
-                    tweet = json.loads(line.decode('utf-8'))  # Ensure proper decoding
-                    yield tweet
-                except json.JSONDecodeError as e:
-                    print(f"Error decoding JSON: {e}")
-                except Exception as e:
-                    print(f"Unexpected error loading tweet: {e}")
+        if compression_type == 'bz2':
+            with bz2.BZ2File(file) as handle:
+                for line in handle:
+                    try:
+                        tweet = json.loads(line.decode('utf-8'))  # Ensure proper decoding
+                        yield tweet
+                    except json.JSONDecodeError as e:
+                        print(f"Error decoding JSON: {e}")
+                    except Exception as e:
+                        print(f"Unexpected error loading tweet: {e}")
+        elif compression_type == 'gz':
+            with gzip.GzipFile(fileobj=file) as handle:
+                for line in handle:
+                    try:
+                        tweet = json.loads(line.decode('utf-8'))  # Ensure proper decoding
+                        yield tweet
+                    except json.JSONDecodeError as e:
+                        print(f"Error decoding JSON: {e}")
+                    except Exception as e:
+                        print(f"Unexpected error loading tweet: {e}")
+    except OSError as e:
+        print(f"OS error opening file: {e}")
+    except IOError as e:
+        print(f"I/O error opening file: {e}")
     except Exception as e:
         print(f"Unexpected error opening file: {e}")
 
@@ -77,23 +93,42 @@ def clean(tweets, percentage, seed):
         except KeyError:
             continue  # Do nothing if required keys are missing
 
-def process_twitterstream(year, percentage=1, seed=0):
+def filter_by_dates(df, dates):
     """
-    This function processes a Twitter stream data for a given year. It reads the data from .tar or .zip files, 
-    extracts the tweets, selects a random sample of the tweets based on the provided percentage, 
-    resolves the location of each tweet using the Carmen library, and saves the processed data in a .csv file.
+    Filter the DataFrame to include only rows with 'created_at' in the specified dates.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame to filter.
+    dates (list of str): List of dates to keep. Format should be 'YYYY-MM-DD'.
+
+    Returns:
+    pd.DataFrame: The filtered DataFrame.
+    """
+    df['created_at'] = pd.to_datetime(df['created_at']).dt.date
+    dates = pd.to_datetime(dates).date
+    return df[df['created_at'].isin(dates)]
+
+def process_twitterstream(year, percentage=1, seed=0, dates=None):
+    """
+    Process Twitter stream data for a given year, extracting and cleaning tweets from compressed files.
+
+    This function searches for compressed files (.tar or .zip) in the specified directory, extracts
+    .bz2 or .json.gz files, loads the tweets, cleans them, and saves the results to CSV files.
 
     Parameters:
     year (int): The year of the Twitter stream data to process.
-    percentage (float, optional): The percentage of tweets to sample from each file. Default is 1, which means all tweets are used.
-    seed (int, optional): The seed for the random number generator used for sampling tweets. Default is 0.
+    percentage (float): The percentage of tweets to sample. Default is 1 (100%).
+    seed (int): The seed for the random number generator used for sampling tweets. Default is 0.
+    dates (list of str, optional): List of dates to filter the tweets. Format should be 'YYYY-MM-DD'.
 
     Returns:
     None
-
     """
-
     filenames = glob.glob(os.path.join('..', 'preprocess', 'data', str(year), '*'))
+
+    if not filenames:
+        print("No files found for the given year.")
+        return
 
     for filename in filenames:
         print('Starting processing...')
@@ -111,17 +146,42 @@ def process_twitterstream(year, percentage=1, seed=0):
         if filename.endswith('.tar'):
             with tarfile.open(filename) as tar:
                 for member in tqdm(tar.getmembers()):
-                    file = tar.extractfile(member)
-                    tweets = clean(load_bz2_json(file), percentage, seed)
-                    all_tweets.extend(tweets)
+                    if member.isfile() and (member.name.endswith('.bz2') or member.name.endswith('.json.gz')):
+                        file = tar.extractfile(member)
+                        if file:
+                            compression_type = 'bz2' if member.name.endswith('.bz2') else 'gz'
+                            tweets = clean(load_compressed_json(file, compression_type), percentage, seed)
+                            all_tweets.extend(tweets)
+                        else:
+                            print(f"Could not extract file from tar: {member.name}")
+                    else:
+                        print(f"Skipping non-bz2/non-gz file: {member.name}")
         elif filename.endswith('.zip'):
             with zipfile.ZipFile(filename) as zipf:
                 for member in tqdm(zipf.namelist()):
-                    if member.endswith('.bz2'):
+                    if member.endswith('.bz2') or member.endswith('.json.gz'):
                         with zipf.open(member) as file:
-                            tweets = clean(load_bz2_json(file), percentage, seed)
+                            compression_type = 'bz2' if member.endswith('.bz2') else 'gz'
+                            tweets = clean(load_compressed_json(file, compression_type), percentage, seed)
                             all_tweets.extend(tweets)
+                    else:
+                        print(f"Skipping non-bz2/non-gz file: {member}")
+
+        print(f"Total tweets extracted: {len(all_tweets)}")
+
+        if not all_tweets:
+            print("No tweets extracted, skipping file.")
+            continue
 
         df = pd.DataFrame(all_tweets, columns=['id', 'text', 'created_at'])
 
+        if dates:
+            df = filter_by_dates(df, dates)
+            print(f"Total tweets after date filtering: {len(df)}")
+
+        if df.empty:
+            print("DataFrame is empty after processing, skipping CSV writing.")
+            continue
+
         df.to_csv(os.path.join(output_dir, f'{output_filename}.csv'), index=False)
+        print(f"CSV written: {os.path.join(output_dir, f'{output_filename}.csv')}")
