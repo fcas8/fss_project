@@ -4,6 +4,7 @@ import spacy
 from tqdm import tqdm
 import nltk
 from nltk.corpus import words
+from langdetect import detect, LangDetectException
 
 # Download the words corpus if not already downloaded
 nltk.download('words')
@@ -32,6 +33,15 @@ def add_label_column(df):
     print("Label column added.")
     return df
 
+def is_english(text):
+    """
+    Detects if the given text is in English.
+    """
+    try:
+        return detect(text) == 'en'
+    except LangDetectException:
+        return False
+
 def process_chunk(chunk, text_column='text'):
     """
     Preprocesses a chunk of tweets by cleaning and tokenizing the text data, including the removal of AI-related keywords.
@@ -40,6 +50,9 @@ def process_chunk(chunk, text_column='text'):
 
     # Ensure all values in the text column are strings and fill NaN values with empty strings
     chunk[text_column] = chunk[text_column].fillna('').astype(str)
+
+    # Filter out non-English tweets
+    chunk = chunk[chunk[text_column].apply(is_english)]
 
     # Load spaCy model
     nlp = spacy.load('en_core_web_sm')
@@ -72,7 +85,7 @@ def process_chunk(chunk, text_column='text'):
     print(f"Preprocessing complete. Chunk size: {chunk.shape}")
     return chunk
 
-def process_tweets(input_file='../preprocess/data_merged/merged.csv', output_path='../preprocess/data_tokenized/tokenized_posts.csv', sample_frac=1, random_state=42, chunk_size=100000, encoding='utf-8'):
+def process_tweets(input_file='../preprocess/data_merged/merged.csv', output_path='../preprocess/data_tokenized/tokenized.csv', sample_frac=1, random_state=42, chunk_size=100000, encoding='utf-8'):
     """
     Main function to process tweets in chunks.
     """
@@ -120,4 +133,4 @@ def process_tweets(input_file='../preprocess/data_merged/merged.csv', output_pat
     print(f"CSV written: {output_path}")
 
 if __name__ == "__main__":
-    process_tweets(input_file='../preprocess/data_merged/merged.csv', output_path='../preprocess/data_tokenized/tokenized_posts.csv', sample_frac=1, chunk_size=100000, encoding='utf-8')
+    process_tweets(input_file='../preprocess/data_merged/merged.csv', output_path='../preprocess/data_tokenized/tokenized.csv', sample_frac=1, chunk_size=100000, encoding='utf-8')
