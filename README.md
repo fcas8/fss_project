@@ -6,7 +6,7 @@ This repository contains the replication materials for the paper, *"The Growing 
 
 ## Dataset
 
-The dataset, sourced from [The Twitter Stream Archive](https://archive.org/details/twitterstream), is a collection of Twitter data in JSON format grabbed from the general twitter stream. For replication purposes, as mentioned in the setup section, we give out the tokenized dataset[here](https://we.tl/t-LN64E9jzeA).
+The dataset, sourced from [The Twitter Stream Archive](https://archive.org/details/twitterstream), is a collection of Twitter data in JSON format grabbed from the general twitter stream. For replication purposes, as mentioned in the setup section, we give out the tokenized dataset [here](https://we.tl/t-LN64E9jzeA).
 
 ## Project Goals
 
