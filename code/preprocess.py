@@ -17,9 +17,6 @@ import os
 import pandas as pd
 from tqdm import tqdm
 
-# Set the current working directory to the script's directory
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
 def load_compressed_json(file, compression_type, year):
     """
     Load compressed JSON files and handle both modular (with 'data', 'includes') 

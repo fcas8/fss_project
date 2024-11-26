@@ -11,8 +11,6 @@ import pandas as pd
 import glob
 from tqdm import tqdm
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
 def process_and_save_chunk(file_path, output_path, filters=None, chunk_size=100000):
     """
     Process a single file in chunks and append the results to the output file.
@@ -106,40 +104,40 @@ def merge_data(year, filters=None):
 
     print(f"Datasets for year {year} merged and saved successfully to {output_path}.")
 
-def merge_all_years(output_path=None, chunk_size=100000):
+def merge_all_years(output_path=None):
     """
-    Merge all yearly merged files from the data_merged folder into a single dataset.
+    Merge all yearly files from the data_tokenized folder into a single dataset.
 
     Parameters:
-    output_path (str, optional): Path to save the final merged dataset. Defaults to 'data_merged/merged.csv'.
-    chunk_size (int, optional): Number of rows per chunk.
+    output_path (str, optional): Path to save the final merged dataset. Defaults to 'data_merged/tokenized.csv'.
 
     Returns:
     pd.DataFrame: The final merged dataset.
     """
     # Define the input directory
-    input_dir = os.path.join('..', 'preprocess', 'data_merged')
+    input_dir = os.path.join('..', 'preprocess', 'data_tokenized')
 
     # Set default output path if not specified
     if output_path is None:
-        output_path = os.path.join(input_dir, 'merged.csv')
+        output_path = os.path.join(input_dir, 'tokenized.csv')
+
+    # Remove the output file if it already exists
+    if os.path.exists(output_path):
+        os.remove(output_path)
+        print(f"Existing file {output_path} removed.")
 
     # Get all CSV files in the input directory that start with a year
-    file_paths = glob.glob(os.path.join(input_dir, '[0-9][0-9][0-9][0-9]_merged.csv'))
+    file_paths = glob.glob(os.path.join(input_dir, '[0-9][0-9][0-9][0-9]_tokenized.csv'))
 
     if not file_paths:
         raise FileNotFoundError(f"No merged files found in {input_dir}.")
 
-    # Process and save each file in chunks
-    for file_path in tqdm(file_paths, desc="Merging yearly files"):
-        for chunk in pd.read_csv(file_path, chunksize=chunk_size):
-            if not os.path.isfile(output_path):
-                chunk.to_csv(output_path, index=False, mode='w')
-            else:
-                chunk.to_csv(output_path, index=False, mode='a', header=False)
+    # Merge all files into a single DataFrame
+    merged_df = pd.concat([pd.read_csv(file_path) for file_path in tqdm(file_paths, desc="Merging yearly files")])
 
+    # Save the final merged dataset
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    merged_df.to_csv(output_path, index=False)
     print(f"Final merged dataset saved to {output_path}")
 
-    # Load the final merged dataset to return it
-    final_merged_df = pd.read_csv(output_path)
-    return final_merged_df
+    return merged_df

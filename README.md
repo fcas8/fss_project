@@ -1,35 +1,60 @@
-# AI Sentiment Analysis in Political Discussions
+# Replication Package for "The growing positivity toward AI: a multi-year sentiment analysis of Twitter posts"
 
-This project aims to analyze public sentiment surrounding AI-related topics within the subreddit r/PoliticalDiscussion. Using a dataset containing all posts and comments, we plan to extract, process, and interpret user sentiment toward AI.
+## Overview
+
+This repository contains the replication materials for the paper, *"The Growing Positivity Toward AI: A Multi-Year Sentiment Analysis of Twitter Posts"*. The study analyzes Twitter data from January 2019 to November 2022 to track public sentiment toward artificial intelligence (AI). It uses a cross-validated logistic regression classifier and dictionary-based sentiment analysis to classify tweets as positive, neutral, or negative and examines temporal trends in public opinion.
 
 ## Dataset
 
-The dataset, sourced from [Academic Torrents](https://academictorrents.com/details/56aa49f9653ba545f48df2e33679f014d2829c10), includes historical data from the r/PoliticalDiscussion subreddit. It contains posts and comments that will serve as the foundation for this sentiment analysis.
+The dataset, sourced from [The Twitter Stream Archive](https://archive.org/details/twitterstream), is a collection of Twitter data in JSON format grabbed from the general twitter stream. For replication purposes, you can download the tokenized dataset from the following WeTransfer link: [Download Dataset](https://we.tl/t-LN64E9jzeA)
 
 ## Project Goals
 
-The project will attempt to:
-1. Identify posts and comments discussing AI topics.
-2. Establish, through a logistic regression cross-validated classifier, the volume of posts discussing AI-related topics over time.
-3. Conduct sentiment analysis to capture public perception and attitudes towards AI.
-4. Explore trends or shifts in sentiment over time, as available in the dataset.
+The project aims to:
+1. Identify tweets discussing AI topics.
+2. Use a logistic regression cross-validated classifier to determine the volume of posts discussing AI-related topics over time.
+3. Conduct sentiment analysis to capture public perception and attitudes towards AI over time.
 
 ## Setup
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone <https://github.com/fcas8/fss_project>
+   ```
 2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 3. Download and prepare the dataset as instructed on Academic Torrents.
-...
 
-## Project Structure
+## Project Structure and Pipeline
 
-* `preprocess.py`: Prepares the raw dataset by filtering out only the records needed.
-* `logisticregression.py`: Contains functions to train the classifier.
-* `sentiment_analysis.py`: Contains functions for performing sentiment analysis.
-* `utils.py`: Additional utilities for data handling and cleaning.
+* `code/main.py`: Main script to run the entire pipeline.
+* `code/preprocess.py`: Prepares the raw dataset by filtering out only the necessary records.
+* `code/merge.py`: Merges datasets from different days/years.
+* `code/tokenizer.py`: Tokenizes the text data.
+* `code/clean.py`: Cleans the dataset by removing unwanted content.
+* `code/train_classifier_vectorizer.py`: Contains functions to train the classifier and vectorize the text data.
+* `code/sentiment.py`: Contains functions for performing sentiment analysis.
+
+## Running the Analysis
+
+For replication purposes, users can simply run the `main.py` script, which will execute the entire pipeline starting from data cleaning:
+
+```bash
+python code/main.py
+```
+
+## Results
+
+The results of the analysis, including trained models, vectorizers, and sentiment analysis outputs, are stored in the `results/` directory:
+* `results/classifier/`: Contains the trained classifier models and vectorizers.
+* `results/sentiment/`: Contains the sentiment analysis results.
 
 ## Contributing
 
 Feel free to submit issues or pull requests to improve the project.
+
+## Contact
+
+For any questions or inquiries, please contact Federico Casotto at federico.casotto@studbocconi.it.
