@@ -1,14 +1,28 @@
+"""
+Dataset Clean Script
+
+This script cleans the dataset by removing explicit content and saving the cleaned data.
+
+"""
+
 import pandas as pd
-import numpy as np
 import os
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegressionCV
-from sklearn.metrics import accuracy_score
 from sklearn.utils import resample
 import shutil
 
 def add_label_column(df):
+    """
+    Add a label column to the DataFrame based on the presence of explicit content keywords.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the text data.
+
+    Returns:
+    pd.DataFrame: The DataFrame with an added 'label_p' column.
+    """
     # Extended list of keywords commonly associated with explicit content
     porn_keywords = (
         r'\bporn\b|\bpornography\b|\bsex\b|\bsexy\b|\berotic\b|\bnude\b|\bnudes\b|\bxxx\b|'
@@ -29,6 +43,12 @@ def add_label_column(df):
 def load_data(input_path):
     """
     Load and clean the dataset.
+
+    Parameters:
+    input_path (str): The path to the input CSV file.
+
+    Returns:
+    pd.DataFrame: The cleaned DataFrame.
     """
     print("Loading data...")
     df = pd.read_csv(input_path)
@@ -43,6 +63,12 @@ def load_data(input_path):
 def split_and_vectorize(df):
     """
     Split the data into training and test sets, balance the training set, and vectorize the text data.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the text data and labels.
+
+    Returns:
+    tuple: Tuple containing the vectorized training and test features, training and test labels, and the vectorizer.
     """
     print("Splitting and vectorizing data...")
 
@@ -88,6 +114,13 @@ def split_and_vectorize(df):
 def train_classifier(X_train_balanced_counts, Y_train_balanced):
     """
     Train a Logistic Regression CV classifier.
+
+    Parameters:
+    X_train_balanced_counts (scipy.sparse.csr.csr_matrix): The vectorized training features.
+    Y_train_balanced (pd.Series): The training labels.
+
+    Returns:
+    LogisticRegressionCV: The trained classifier.
     """
     print("Training classifier...")
     clf = LogisticRegressionCV(cv=5, max_iter=1000)
@@ -98,6 +131,14 @@ def train_classifier(X_train_balanced_counts, Y_train_balanced):
 def add_predictions(df, clf, vectorizer):
     """
     Add predictions to the DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the text data.
+    clf (LogisticRegressionCV): The trained classifier.
+    vectorizer (CountVectorizer): The vectorizer used to transform the text data.
+
+    Returns:
+    pd.DataFrame: The DataFrame with an added 'prediction' column.
     """
     print("Adding predictions...")
     X_counts = vectorizer.transform(df['text'])
@@ -105,6 +146,16 @@ def add_predictions(df, clf, vectorizer):
     return df
 
 def clean_data(input_path='../preprocess/data_tokenized/tokenized.csv', output_dir='../preprocess/data_cleaned'):
+    """
+    Clean the dataset by removing explicit content and saving the cleaned data.
+
+    Parameters:
+    input_path (str): The path to the input CSV file.
+    output_dir (str): The directory to save the cleaned data.
+
+    Returns:
+    None
+    """
     # Ensure the output directory exists
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)

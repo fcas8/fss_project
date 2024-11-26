@@ -5,7 +5,7 @@ import sys
 # from merge import merge_data, merge_all_years
 # from tokenizer import process_tweets
 from clean import clean_data
-from train_classifier_vectorizer import vectorize_train
+from classifier import vectorize_train
 from sentiment import run_sentiment
 
 # Set the current working directory to the folder where this file is located
@@ -22,9 +22,9 @@ sys.path.append(current_dir)
 #     output_path = f'../preprocess/data_tokenized/{year}_tokenized.csv'
 #     process_tweets(input_file=input_file, output_path=output_path, sample_frac=.2, base_chunk_size=100000)
 
-# merge_all_years()       # Merge all years into one file
+# merge_all_years()   # Merge all years into one file
 
-# Run this for replication
-clean_data()            # Remove porn content from data
-vectorize_train()       # Train classifier
-run_sentiment()   # Run sentiment analysis
+# Run only this for replication
+clean_data()        # Remove porn content from data
+vectorize_train()   # Train classifier
+run_sentiment()     # Run sentiment analysis

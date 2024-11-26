@@ -1,3 +1,11 @@
+"""
+Classifier Training Script
+
+This script trains classifiers on text data by vectorizing features and balancing classes. 
+It supports model training, evaluation, and visualization of results, including top features and temporal trends.
+
+"""
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,12 +24,15 @@ import joblib
 import shutil
 import contextlib
 
-# Set the current working directory to the script's directory
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
 def load_data(input_path):
     """
     Load and clean the dataset.
+
+    Parameters:
+    input_path (str): The path to the input CSV file.
+
+    Returns:
+    pd.DataFrame: The cleaned DataFrame containing only relevant rows for classification.
     """
     print("Loading data...")
     df = pd.read_csv(input_path)
@@ -47,6 +58,12 @@ def load_data(input_path):
 def split_and_vectorize(df):
     """
     Split the data into training and test sets, balance the training set, and vectorize the text data.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing text data and labels.
+
+    Returns:
+    tuple: Contains the vectorized training features, test features, training labels, test labels, and the vectorizer.
     """
     print("Splitting and vectorizing data...")
 
@@ -93,7 +110,15 @@ def split_and_vectorize(df):
 
 def train_classifier(X_train_balanced_counts, Y_train_balanced, model_type='logistic'):
     """
-    Train a classifier.
+    Train a classifier on the given dataset.
+
+    Parameters:
+    X_train_balanced_counts (scipy.sparse.csr.csr_matrix): The vectorized training features.
+    Y_train_balanced (pd.Series): The training labels.
+    model_type (str): The type of classifier to train. Options include 'logistic', 'random forest', 'svm', etc.
+
+    Returns:
+    sklearn.base.BaseEstimator: The trained classifier.
     """
     print(f"Training {model_type} classifier...")
     if model_type == 'logistic':
@@ -114,7 +139,16 @@ def train_classifier(X_train_balanced_counts, Y_train_balanced, model_type='logi
 
 def evaluate_classifier(clf, X_test_counts, Y_test, model_type='logistic'):
     """
-    Evaluate the classifier and print the accuracy.
+    Evaluate the performance of the classifier.
+
+    Parameters:
+    clf (sklearn.base.BaseEstimator): The trained classifier.
+    X_test_counts (scipy.sparse.csr.csr_matrix): The vectorized test features.
+    Y_test (pd.Series): The test labels.
+    model_type (str): The type of classifier being evaluated.
+
+    Returns:
+    float: The accuracy of the classifier.
     """
     print(f"Evaluating {model_type} classifier...")
     Y_pred = clf.predict(X_test_counts)
@@ -124,8 +158,15 @@ def evaluate_classifier(clf, X_test_counts, Y_test, model_type='logistic'):
 
 def get_top_features(clf, vectorizer, top_n=300):
     """
-    Get the top N features with the highest importance for the given classifier.
-    Supports linear models, tree-based models, and Naive Bayes.
+    Retrieve the top N features based on importance scores from the trained classifier.
+
+    Parameters:
+    clf (sklearn.base.BaseEstimator): The trained classifier.
+    vectorizer (sklearn.feature_extraction.text.TfidfVectorizer): The vectorizer used for feature extraction.
+    top_n (int): The number of top features to retrieve.
+
+    Returns:
+    tuple: Contains two lists - top feature names and their corresponding importance scores.
     """
     print(f"Extracting top features for model: {type(clf).__name__}")
 
@@ -160,6 +201,15 @@ def get_top_features(clf, vectorizer, top_n=300):
 def save_top_features(top_feature_names, top_feature_scores, output_dir, model_type='logistic'):
     """
     Save the top features to a CSV file.
+
+    Parameters:
+    top_feature_names (list): The names of the top features.
+    top_feature_scores (list): The importance scores of the top features.
+    output_dir (str): The directory to save the file.
+    model_type (str): The type of model for which the features are being saved.
+
+    Returns:
+    None
     """
     print("Saving top features...")
     top_features_df = pd.DataFrame({
@@ -171,7 +221,16 @@ def save_top_features(top_feature_names, top_feature_scores, output_dir, model_t
 
 def generate_wordcloud(top_feature_names, top_feature_scores, output_dir, model_type='logistic'):
     """
-    Generate and save a word cloud image of the top features.
+    Generate and save a word cloud visualization for the top features.
+
+    Parameters:
+    top_feature_names (list): The names of the top features.
+    top_feature_scores (list): The importance scores of the top features.
+    output_dir (str): The directory to save the word cloud image.
+    model_type (str): The type of model used to determine the features.
+
+    Returns:
+    None
     """
     print("Generating word cloud...")
     positive_features = {name: score for name, score in zip(top_feature_names, top_feature_scores) if score > 0}
@@ -186,7 +245,16 @@ def generate_wordcloud(top_feature_names, top_feature_scores, output_dir, model_
 
 def plot_probabilities(df, clfs, vectorizer, output_dir):
     """
-    Plot and save the average probability of posts belonging to the AI class over time for all models.
+    Plot the average probability of posts belonging to the AI class over time for all classifiers.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the text data and timestamps.
+    clfs (dict): Dictionary of trained classifiers, keyed by model type.
+    vectorizer (sklearn.feature_extraction.text.TfidfVectorizer): The vectorizer used for feature extraction.
+    output_dir (str): The directory to save the probability plot.
+
+    Returns:
+    None
     """
     print("Plotting probabilities...")
 
@@ -219,7 +287,16 @@ def plot_probabilities(df, clfs, vectorizer, output_dir):
 
 def plot_roc_curves(clfs, X_test_counts, Y_test, output_dir):
     """
-    Plot the ROC curves for all classifiers together.
+    Plot the ROC curves for all classifiers.
+
+    Parameters:
+    clfs (dict): Dictionary of trained classifiers, keyed by model type.
+    X_test_counts (scipy.sparse.csr.csr_matrix): The vectorized test features.
+    Y_test (pd.Series): The test labels.
+    output_dir (str): The directory to save the ROC curve plot.
+
+    Returns:
+    None
     """
     plt.figure(figsize=(10, 6))
 
@@ -243,7 +320,17 @@ def plot_roc_curves(clfs, X_test_counts, Y_test, output_dir):
 
 def print_confusion_matrix(clf, X_test_counts, Y_test, output_dir, model_type='logistic'):
     """
-    Print and save the confusion matrix for the best classifier.
+    Generate and save the confusion matrix for the specified classifier.
+
+    Parameters:
+    clf (sklearn.base.BaseEstimator): The trained classifier.
+    X_test_counts (scipy.sparse.csr.csr_matrix): The vectorized test features.
+    Y_test (pd.Series): The test labels.
+    output_dir (str): The directory to save the confusion matrix.
+    model_type (str): The type of classifier being evaluated.
+
+    Returns:
+    None
     """
     print(f"Confusion matrix for {model_type} classifier:")
     y_pred = clf.predict(X_test_counts)
@@ -258,7 +345,16 @@ def print_confusion_matrix(clf, X_test_counts, Y_test, output_dir, model_type='l
 
 def plot_high_probability_percentage(df, clfs, vectorizer, output_dir):
     """
-    Plot and save the percentage of tweets with a probability of belonging to class 1 over 80% over time.
+    Plot the percentage of tweets with high probabilities of belonging to the AI class over time.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the text data and timestamps.
+    clfs (dict): Dictionary of trained classifiers, keyed by model type.
+    vectorizer (sklearn.feature_extraction.text.TfidfVectorizer): The vectorizer used for feature extraction.
+    output_dir (str): The directory to save the high-probability percentage plot.
+
+    Returns:
+    None
     """
     print("Plotting high probability percentage...")
 
@@ -294,7 +390,17 @@ def plot_high_probability_percentage(df, clfs, vectorizer, output_dir):
     plt.close()
     print("High probability percentage plotted and saved.")
 
-def vectorize_train(input_path = '../preprocess/data_cleaned/cleaned.csv', output_dir='../results/classifier/'):
+def vectorize_train(input_path='../preprocess/data_cleaned/cleaned.csv', output_dir='../results/classifier/'):
+    """
+    Execute the complete pipeline: load data, vectorize text, train classifiers, and generate outputs.
+
+    Parameters:
+    input_path (str): Path to the preprocessed and cleaned data file.
+    output_dir (str): Directory to save the trained models, vectorizer, and other outputs.
+
+    Returns:
+    None
+    """
     
     # Ensure the output directory exists
     if os.path.exists(output_dir):

@@ -1,3 +1,10 @@
+"""
+Sentiment Analysis Script
+
+This script performs sentiment analysis on the dataset, filters AI-related tweets, and generates various sentiment-related outputs.
+
+"""
+
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import pandas as pd
@@ -6,7 +13,6 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import os
 import joblib
-import seaborn as sns
 import contextlib
 
 nltk.download('vader_lexicon')
@@ -15,6 +21,12 @@ sia = SentimentIntensityAnalyzer()
 def load_data(input_file):
     """
     Load the dataset from a CSV file and sort by date.
+
+    Parameters:
+    input_file (str): The path to the input CSV file.
+
+    Returns:
+    pd.DataFrame: The loaded and sorted DataFrame.
     """
     print("Loading data...")
     df = pd.read_csv(input_file)
@@ -25,7 +37,15 @@ def load_data(input_file):
 
 def filter_ai_tweets(df, classifier, vectorizer):
     """
-    Filter the DataFrame to include only AI-related tweets with prediction > 0.5.
+    Filter the DataFrame to include only AI-related tweets with prediction > 0.8.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the text data.
+    classifier (LogisticRegressionCV): The trained classifier.
+    vectorizer (CountVectorizer): The vectorizer used to transform the text data.
+
+    Returns:
+    pd.DataFrame: The filtered DataFrame containing only AI-related tweets.
     """
     print("Filtering AI-related tweets...")
     df['text'] = df['text'].fillna('').astype(str)
@@ -38,12 +58,24 @@ def filter_ai_tweets(df, classifier, vectorizer):
 def analyze_sentiment(text):
     """
     Analyze the sentiment of a given text using VADER.
+
+    Parameters:
+    text (str): The text to analyze.
+
+    Returns:
+    dict: The sentiment scores.
     """
     return sia.polarity_scores(text)
 
 def add_sentiment_scores(df_ai):
     """
     Add sentiment scores to the DataFrame.
+
+    Parameters:
+    df_ai (pd.DataFrame): The DataFrame containing AI-related tweets.
+
+    Returns:
+    pd.DataFrame: The DataFrame with added sentiment scores.
     """
     print("Adding sentiment scores...")
     df_ai['sentiment'] = df_ai['text'].apply(analyze_sentiment)
@@ -63,6 +95,13 @@ def add_sentiment_scores(df_ai):
 def save_data(df_ai, output_file):
     """
     Save the DataFrame with sentiment scores to a CSV file.
+
+    Parameters:
+    df_ai (pd.DataFrame): The DataFrame containing AI-related tweets with sentiment scores.
+    output_file (str): The path to the output CSV file.
+
+    Returns:
+    None
     """
     df_ai.to_csv(output_file, index=False)
     print(f"Data with sentiment scores saved to {output_file}")
@@ -70,6 +109,12 @@ def save_data(df_ai, output_file):
 def assign_sentiment_label(compound):
     """
     Assign a sentiment label based on the compound score.
+
+    Parameters:
+    compound (float): The compound sentiment score.
+
+    Returns:
+    str: The sentiment label ('positive', 'negative', or 'neutral').
     """
     if compound > 0.05:
         return 'positive'
@@ -81,6 +126,12 @@ def assign_sentiment_label(compound):
 def add_sentiment_labels(df_ai):
     """
     Add sentiment labels to the DataFrame.
+
+    Parameters:
+    df_ai (pd.DataFrame): The DataFrame containing AI-related tweets with sentiment scores.
+
+    Returns:
+    pd.DataFrame: The DataFrame with added sentiment labels.
     """
     print("Adding sentiment labels...")
     df_ai['sentiment_label'] = df_ai['compound'].apply(assign_sentiment_label)
@@ -90,6 +141,12 @@ def add_sentiment_labels(df_ai):
 def calculate_sentiment_fractions(df_ai):
     """
     Calculate the fractions of positive, negative, and neutral tweets.
+
+    Parameters:
+    df_ai (pd.DataFrame): The DataFrame containing AI-related tweets with sentiment labels.
+
+    Returns:
+    pd.Series: The fractions of each sentiment label.
     """
     print("Calculating sentiment fractions...")
     sentiment_counts = df_ai['sentiment_label'].value_counts()
@@ -102,6 +159,12 @@ def calculate_sentiment_fractions(df_ai):
 def analyze_sentiment_by_year(df_ai):
     """
     Analyze sentiment distribution by year.
+
+    Parameters:
+    df_ai (pd.DataFrame): The DataFrame containing AI-related tweets with sentiment labels.
+
+    Returns:
+    pd.DataFrame: The sentiment fractions by year.
     """
     print("Analyzing sentiment by year...")
     df_ai['created_at'] = pd.to_datetime(df_ai['created_at'], errors='coerce')
@@ -119,6 +182,13 @@ def analyze_sentiment_by_year(df_ai):
 def plot_sentiment_distribution_by_year(sentiment_fractions_by_year, output_dir):
     """
     Plot the sentiment distribution by year.
+
+    Parameters:
+    sentiment_fractions_by_year (pd.DataFrame): The sentiment fractions by year.
+    output_dir (str): The directory to save the plot.
+
+    Returns:
+    None
     """
     print("Plotting sentiment distribution by year...")
     output_file = os.path.join(output_dir, 'sentiment_distribution_by_year.png')
@@ -148,10 +218,13 @@ def plot_sentiment_distribution_by_year(sentiment_fractions_by_year, output_dir)
 def plot_average_sentiment(df_ai, output_dir):
     """
     Plot the average sentiment per month-year.
-    
+
     Parameters:
-        df_ai (pd.DataFrame): DataFrame containing the sentiment data.
-        output_dir (str): Directory to save the plot.
+    df_ai (pd.DataFrame): The DataFrame containing the sentiment data.
+    output_dir (str): The directory to save the plot.
+
+    Returns:
+    None
     """
     print("Plotting average sentiment per month-year...")
 
@@ -184,6 +257,13 @@ def plot_average_sentiment(df_ai, output_dir):
 def generate_wordcloud_from_frequencies(frequencies, output_file):
     """
     Generate and save a word cloud image from word frequencies.
+
+    Parameters:
+    frequencies (dict): The word frequencies.
+    output_file (str): The path to the output image file.
+
+    Returns:
+    None
     """
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(frequencies)
     plt.figure(figsize=(10, 5))
@@ -197,6 +277,13 @@ def generate_wordcloud_from_frequencies(frequencies, output_file):
 def plot_wordclouds(df_ai, output_dir):
     """
     Plot word clouds with words that make tweets positive or negative.
+
+    Parameters:
+    df_ai (pd.DataFrame): The DataFrame containing AI-related tweets.
+    output_dir (str): The directory to save the word clouds.
+
+    Returns:
+    None
     """
     print("Generating word clouds for words that make tweets positive or negative...")
 
@@ -236,7 +323,20 @@ def run_sentiment(input_file = "../preprocess/data_cleaned/cleaned.csv",
                   vectorizer_path = '../results/classifier/vectorizer.joblib',
                   output_dir = '../results/sentiment',
                   sentiment_path=None):
-    
+    """
+    Run the sentiment analysis pipeline.
+
+    Parameters:
+    input_file (str): The path to the input CSV file.
+    output_file (str): The path to the output CSV file.
+    classifier_path (str): The path to the trained classifier model.
+    vectorizer_path (str): The path to the vectorizer.
+    output_dir (str): The directory to save the results.
+    sentiment_path (str, optional): The path to a precomputed sentiment CSV file.
+
+    Returns:
+    None
+    """
     os.makedirs(output_dir, exist_ok=True)
 
     if sentiment_path:

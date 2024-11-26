@@ -1,6 +1,8 @@
 """
-In this code, I open tarfiles of the Twitter Stream Archive, 
-keep relevant information and output results in a dataframe.
+Dataset Preprocess Script
+
+This script processes the Twitter Stream Archive by extracting relevant information from compressed files and outputting the results in a DataFrame.
+
 """
 
 import bz2
@@ -21,6 +23,14 @@ def load_compressed_json(file, compression_type, year):
     """
     Load compressed JSON files and handle both modular (with 'data', 'includes') 
     and flat tweet structures.
+
+    Parameters:
+    file (file-like object): The compressed file to load.
+    compression_type (str): The type of compression ('bz2', 'gz', 'json').
+    year (int): The year of the Twitter stream data.
+
+    Yields:
+    dict: Parsed tweet data.
     """
     try:
         if compression_type == 'bz2':
@@ -40,6 +50,13 @@ def load_compressed_json(file, compression_type, year):
 def parse_tweet(line, year):
     """
     Parse individual tweet data based on format differences.
+
+    Parameters:
+    line (bytes): A line of JSON data.
+    year (int): The year of the Twitter stream data.
+
+    Returns:
+    dict: Parsed tweet data.
     """
     try:
         tweet = json.loads(line.decode('utf-8'))  # Decode if compressed
@@ -61,12 +78,7 @@ def parse_tweet(line, year):
 
 def clean(tweets, percentage, seed):
     """
-    This function takes a generator of tweets, selects a random sample of the tweets based on the provided percentage,
-    resolves the location of each tweet using the provided resolver, and yields the cleaned tweets.
-    Each cleaned tweet is a dictionary with keys 'id', 'text', 'created_at', 'country', 'state', 'county', 'city', 
-    'known', 'latitude', and 'longitude'.
-
-    This version is modified to only yield tweets posted on the first day of any month.
+    Clean the tweets by selecting a random sample and formatting the data.
 
     Parameters:
     tweets (generator): The list of tweets to clean.
@@ -186,3 +198,7 @@ def process_twitterstream(year, percentage=1, seed=0, dates=None):
 
         df.to_csv(os.path.join(output_dir, f'{output_filename}.csv'), index=False)
         print(f"CSV written: {os.path.join(output_dir, f'{output_filename}.csv')}")
+
+if __name__ == "__main__":
+    for year in range(2019, 2023):
+        process_twitterstream(year)
