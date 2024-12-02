@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the replication materials for the paper, *"The Growing Positivity Toward AI: A Multi-Year Sentiment Analysis of Twitter Posts"*. The study analyzes Twitter data from January 2019 to November 2022 to track public sentiment toward artificial intelligence (AI). It uses a cross-validated logistic regression classifier and dictionary-based sentiment analysis to classify tweets as positive, neutral, or negative and examines temporal trends in public opinion.
+This repository contains the replication materials for the paper, *"The Growing Positivity Toward AI: A Multi-Year Sentiment Analysis of Twitter Posts"*. The study analyzes Twitter data from January 2019 to November 2022 to track public sentiment toward artificial intelligence (AI). It uses a cross-validated logistic regression classifier and dictionary-based sentiment analysis to classify tweets as positive, neutral, or negative and examines temporal trends in public opinion. Additional material for the study is available [here](https://we.tl/t-gpfKVlXpRL).
 
 ## Dataset
 
